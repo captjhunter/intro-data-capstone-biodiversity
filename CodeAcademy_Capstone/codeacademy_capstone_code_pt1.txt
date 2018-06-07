@@ -1,0 +1,96 @@
+import codecademylib
+#import functions
+import pandas as pd
+from matplotlib import pyplot as plt
+
+#load csv
+species = pd.read_csv('species_info.csv')
+
+#print csv preview w/ species.head
+print(species.head())
+
+#determining different values 
+species_count = species.scientific_name.nunique()
+species_type = species.category.unique()
+conservation_statuses = species.conservation_status.unique()
+#print(species_count)
+#print(species_type)
+#print(conservation_statuses)
+
+#groupby to count scientific_name in conservation_status
+conservation_counts = species.groupby('conservation_status').scientific_name.nunique().reset_index()
+#print(conservation_counts)
+
+#filling in NaN with 'No Intervention'
+species.fillna('No Intervention', inplace = True)
+conservation_counts_fixed = species.groupby('conservation_status').scientific_name.nunique().reset_index()
+print(conservation_counts_fixed)
+
+
+-----------------------------------------------
+
+#sort values
+protection_counts = species.groupby('conservation_status').scientific_name.nunique().reset_index().sort_values(by='scientific_name')
+
+#creating bar chart
+plt.figure(figsize=(10,4))
+ax = plt.subplot()
+
+plt.bar(range(len(protection_counts.scientific_name)), protection_counts.scientific_name)
+
+ax.set_xticks(range(len(protection_counts)))
+ax.set_xticklabels(protection_counts.conservation_status)
+plt.ylabel('Number of Species')
+plt.title('Conservation Status by Species')
+
+plt.show()
+
+------------------------------------------------
+
+
+#new column. true if conservation status is not euql to 'no intervention' and false otherwise.
+species['is_protected'] = species.conservation_status != 'No Intervention'
+
+#group by category and is_protected
+category_counts = species.groupby(['category', 'is_protected']).scientific_name.nunique().reset_index()
+
+print(category_counts.head())
+
+#create pivot to read data better
+category_pivot = category_counts.pivot(columns='is_protected',
+                      index='category',
+                      values='scientific_name')\
+                      .reset_index()
+
+#rename columns  
+category_pivot.columns = ['category', 'not_protected', 'protected']
+
+#new column in category pivot
+category_pivot['percent_protected'] = category_pivot.protected / (category_pivot.protected + category_pivot.not_protected)
+
+#print to see percentage
+print(category_pivot)
+
+---------------------------------------
+
+from scipy.stats import chi2_contingency
+
+contingency = [[30, 146], [75, 413]]
+
+pval = chi2_contingency(contingency)[1]
+print(pval)
+
+# No significant difference. pval > 0.05
+
+contingency_reptile_mammal = [[30, 146], [5, 73]]
+
+pval_reptile_mammal = chi2_contingency(contingency_reptile_mammal)[1]
+
+print(pval_reptile_mammal)
+# Significant difference. pval_reptile_mammal < 0.05
+
+--------------------------------------------
+
+Are certain types of species more likely to be endangered?
+
+It can be concluded that certain types of species are more likely to be endangered than others.
